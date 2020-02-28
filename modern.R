@@ -2,18 +2,18 @@ library(magrittr)
 library(glue)
 library(zeallot)
 
-backup_dir <- "backup-modern"
+backup_dir <- "backup-modern" # chgrp analytics-privatedata-users backup-modern
 fs::dir_create(fs::path(backup_dir, "monthly"))
 projectview_root <- "/mnt/hdfs/wmf/data/wmf/projectview/hourly"
 projectview_dir <- "{projectview_root}/year={year}/month={month}/day={day}/hour={hour}"
-tmp_json <- fs::file_temp(tmp_dir = ".", ext = ".json")
+tmp_json <- fs::file_temp(tmp_dir = "temp", ext = ".json") # chgrp analytics-privatedata-users temp
 
 start_date <- as.Date("2015-04-01")
 end_date <- as.Date("2020-01-31")
 dates <- seq(start_date, end_date, by = "day")
 
-yearly_data <- purrr::map(unique(lubridate::year(dates)), function(year) {
-  monthly_data <- purrr::map(
+yearly_data <- purrr::walk(unique(lubridate::year(dates)), function(year) {
+  monthly_data <- purrr::walk(
     unique(lubridate::month(dates[lubridate::year(dates) == year])),
     function(month) {
       if (fs::file_exists(file.path(backup_dir, "monthly", glue("{year}-{month}.csv.gz")))) {
@@ -42,7 +42,7 @@ yearly_data <- purrr::map(unique(lubridate::year(dates)), function(year) {
                 segment <- segment[
                   access_method %in% c("desktop", "mobile web"),
                   list(view_count = sum(view_count)),
-                  by = c("project", "access_method")
+                  by = c("project", "access_method", "agent_type")
                 ]
                 # Set additional key columns:
                 segment$year <- year
@@ -56,12 +56,12 @@ yearly_data <- purrr::map(unique(lubridate::year(dates)), function(year) {
           return(data.table::rbindlist(hourly_data))
         })
       month_of_data <- data.table::rbindlist(daily_data)
-      month_of_data <- month_of_data[, list(view_count = sum(view_count)), by = c("project", "access_method", "year", "month", "day")]
+      month_of_data <- month_of_data[, list(view_count = sum(view_count)), by = c("project", "access_method", "agent_type", "year", "month", "day")]
       message("Backing up to ", file.path(backup_dir, "monthly", glue("{year}-{month}.csv.gz")))
       data.table::fwrite(month_of_data, file = file.path(backup_dir, "monthly", glue("{year}-{month}.csv.gz")))
-      return(month_of_data)
+      # return(month_of_data)
     })
-  return(data.table::rbindlist(monthly_data))
+  # return(data.table::rbindlist(monthly_data))
 })
-projectview_data <- data.table::rbindlist(yearly_data)
-data.table::fwrite(month_of_data, file = file.path(backup_dir, glue("{year}.csv.gz")))
+# projectview_data <- data.table::rbindlist(yearly_data)
+# data.table::fwrite(month_of_data, file = file.path(backup_dir, glue("{year}.csv.gz")))

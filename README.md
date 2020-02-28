@@ -7,6 +7,15 @@
 3. [modern.R](modern.R) and [modern2.R](modern2.R) read, process, and combine modern pageview counts from HDFS
 4. [combine.R](combine.R) combines legacy and modern traffic into a single dataset, also produces the plot below
 
+**Note to self**: For continuous processing of files in HDFS, keytab on stat1004 is utilized together with [modern.sh](modern.sh) per instructions in [wikitech:Analytics/Systems/Kerberos/UserGuide](https://wikitech.wikimedia.org/wiki/Analytics/Systems/Kerberos/UserGuide#Run_a_recurrent_job_via_Cron_or_similar_without_kinit_every_day):
+
+```bash
+# mkdir backup-modern && chgrp analytics-privatedata-users backup-modern
+# mkdir temp && chgrp analytics-privatedata-users test
+# chmod +x modern.sh
+sudo -u analytics-privatedata ./modern.sh
+```
+
 ## Data
 
 ![Overview of traffic counts](overview.png)
